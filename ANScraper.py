@@ -222,6 +222,7 @@ class ANScraper:
                 
     def scrape_line_types(self, date, league):
         line_types = self.browser.find_elements_by_class_name("odds-types-checkboxes__input")
+        print(line_types)
         ## For defaulting to spread data being already clicked
         if league in ['nfl','ncaaf','ncaab','nba']:
             spread_data = self.scrape_data(date, [['Away','Home']])

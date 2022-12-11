@@ -1,0 +1,17 @@
+#The Action Network
+[ActionNetwork]
+user : Nicholas Kao
+email: kao.nicholas@gmail.com
+password : sports4ever!A
+
+#AWS Portal
+[AmazonRDS]
+email : kao.nicholas@gmail.com
+password : sports4ever!A
+
+#MySQL
+[an]
+user : admin
+password : npreport!
+host : sampledata.cudlwuxmt0mg.us-east-2.rds.amazonaws.com
+
