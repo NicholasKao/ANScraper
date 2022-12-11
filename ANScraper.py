@@ -152,13 +152,16 @@ class ANScraper:
 
                     try:
                         current_odds = row.find_element_by_class_name('public-betting__odds-container').text
-                        print(current_odds)
                         game_data[f'CurrentBest{options[0][0]}Line'] = current_odds.split('\n')[0].replace('+','').replace('PK','0')
-                        game_data[f'CurrentBest{options[0][1]}Line'] = current_odds.split('\n')[2].replace('+','').replace('PK','0')
+                        if options[0] == ['AwayML','HomeML']:
+                            game_data[f'CurrentBest{options[0][1]}Line'] = current_odds.split('\n')[1].replace('+','').replace('PK','0')
+                        else:
+                            game_data[f'CurrentBest{options[0][1]}Line'] = current_odds.split('\n')[2].replace('+','').replace('PK','0')
                         if options[0] != ['AwayML','HomeML']:
                             game_data[f'CurrentBest{options[0][0]}LineJuice'] = current_odds.split('\n')[1].replace('+','')
                             game_data[f'CurrentBest{options[0][1]}LineJuice'] = current_odds.split('\n')[3].replace('+','')
-                    except:
+                    except Exception as e:
+                        print(e)
                         game_data[f'CurrentBest{options[0][0]}Line'] = None
                         game_data[f'CurrentBest{options[0][1]}Line'] = None
                         if options[0] != ['AwayML','HomeML']:
@@ -313,7 +316,7 @@ class ANScraper:
         weeks = {'NFL': ['Hall of Fame Weekend','Preseason Week 1','Preseason Week 2','Preseason Week 3','Week 1','Week 2','Week 3','Week 4','Week 5','Week 6','Week 7','Week 8','Week 9','Week 10','Week 11','Week 12','Week 13','Week 14','Week 15','Week 16','Week 17','Week 18','Wild Card','Division Round','Conf Champ','Pro Bowl','Super Bowl'],
                  'NCAAF': ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6','Week 7','Week 8','Week 9','Week 10','Week 11','Week 12','Week 13','Week 14','Week 15','Bowls']}
         # navigate to league odds page
-        self.browser.get(f'https://www.actionnetwork.com/{league}/odds')
+        self.browser.get(f'https://www.actionnetwork.com/{league.lower()}/odds')
         # go back one day - doesn't work for football since it uses weeks
         if league in ['NFL','NCAAF']:
             filters = self.browser.find_element_by_class_name('odds-tools-sub-nav__odds-settings')
@@ -326,9 +329,7 @@ class ANScraper:
             week_selector.select_by_value(previous_date)
             selected_week_index -= 1
         else:
-            filters = self.browser.find_element_by_class_name('odds-tools-sub-nav__odds-settings')
-            filters.click()
-            self.browser.find_element_by_class_name('day-nav__button.custom-1nzrqwz.e1y7ccqs0').click()
+            self.browser.find_element_by_class_name('day-nav__button.custom-1esqi3z.eo3fubg0').click()
             previous_date = dt.today().date() - td(days = 1)
         previous_scores = self.get_scores(previous_date)
         self.into_db(previous_scores, f'{league}_Scores', 'scores')
@@ -379,13 +380,13 @@ class ANScraper:
             if status.text.lower() != 'final': #game not over
                 continue
             team_info = game.find_element_by_class_name('best-odds__game-info').find_elements_by_class_name('game-info__teams')
-            away_team = team_info[0].find_element_by_class_name('game-info__team').find_element_by_class_name('game-info__team--mobile').text
+            away_team = team_info[0].find_element_by_class_name('game-info__team').find_element_by_class_name('game-info__team--desktop').text
             away_rot = team_info[0].find_element_by_class_name('game-info__team').find_element_by_class_name('game-info__rot-number').text
-            away_score = team_info[0].find_element_by_class_name('game-info__score').text
+            away_score = team_info[0].find_element_by_class_name('game-info__top-score').text
 
-            home_team = team_info[1].find_element_by_class_name('game-info__team').find_element_by_class_name('game-info__team--mobile').text
+            home_team = team_info[1].find_element_by_class_name('game-info__team').find_element_by_class_name('game-info__team--desktop').text
             home_rot = team_info[1].find_element_by_class_name('game-info__team').find_element_by_class_name('game-info__rot-number').text
-            home_score = team_info[1].find_element_by_class_name('game-info__score').text
+            home_score = team_info[1].find_element_by_class_name('game-info__bottom-score').text
 
             away_teams.append(away_team)
             home_teams.append(home_team)
@@ -447,16 +448,16 @@ if __name__ == "__main__":
     scraper = ANScraper()
     scraper.login()
 
-    # scraper.scrape_previous_scores('NBA')
+    scraper.scrape_previous_scores('NBA')
     scraper.scrape_odds('nba')
-    # scraper.scrape_previous_scores('NFL')
-    # scraper.scrape_odds('nfl')
-    # scraper.scrape_previous_scores('NCAAF')
-    # scraper.scrape_odds('ncaaf')
-    # scraper.scrape_previous_scores('NCAAB')
-    # scraper.scrape_odds('ncaab')
-    # scraper.scrape_previous_scores('NHL')
-    # scraper.scrape_odds('nhl')
-    # scraper.scrape_previous_scores('MLB')
-    # scraper.scrape_odds('mlb')
+    #scraper.scrape_previous_scores('NFL')
+    scraper.scrape_odds('nfl')
+    #scraper.scrape_previous_scores('NCAAF')
+    scraper.scrape_odds('ncaaf')
+    scraper.scrape_previous_scores('NCAAB')
+    scraper.scrape_odds('ncaab')
+    scraper.scrape_previous_scores('NHL')
+    scraper.scrape_odds('nhl')
+    scraper.scrape_previous_scores('MLB')
+    scraper.scrape_odds('mlb')
     scraper.quit()
