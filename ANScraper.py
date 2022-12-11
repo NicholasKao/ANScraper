@@ -79,10 +79,10 @@ class ANScraper:
                         game_data['HomeRot'] = None
                         game_data['HomeTeam'] = game_info[2]
                     else:
-                        game_data['AwayRot'] = game_info[1]
-                        game_data['AwayTeam'] = game_info[2]
-                        game_data['HomeRot'] = game_info[3]
-                        game_data['HomeTeam'] = game_info[4]
+                        game_data['AwayRot'] = game_info[2]
+                        game_data['AwayTeam'] = game_info[1]
+                        game_data['HomeRot'] = game_info[4]
+                        game_data['HomeTeam'] = game_info[3]
                     continue
                 elif game_info[0] == 'TBD':
                     game_data['WeekDay'] = 'TBD'
@@ -96,10 +96,10 @@ class ANScraper:
                         game_data['HomeRot'] = None
                         game_data['HomeTeam'] = game_info[2]
                     else:
-                        game_data['AwayRot'] = game_info[1]
-                        game_data['AwayTeam'] = game_info[2]
-                        game_data['HomeRot'] = game_info[3]
-                        game_data['HomeTeam'] = game_info[4]
+                        game_data['AwayRot'] = game_info[2]
+                        game_data['AwayTeam'] = game_info[1]
+                        game_data['HomeRot'] = game_info[4]
+                        game_data['HomeTeam'] = game_info[3]
                 else:
                     try:
                         if backfilling:
@@ -221,26 +221,20 @@ class ANScraper:
             self.into_db(self.scrape_line_types(page_date, league), league)
                 
     def scrape_line_types(self, date, league):
-        line_types = self.browser.find_elements_by_class_name("odds-types-checkboxes__input")
-        print(line_types)
-        ## For defaulting to spread data being already clicked
+        line_types_selector = Select(self.browser.find_element_by_class_name("odds-tools-sub-nav__primary-filters").find_elements_by_tag_name('select')[-1])
         if league in ['nfl','ncaaf','ncaab','nba']:
+            line_types_selector.select_by_value('spread')
             spread_data = self.scrape_data(date, [['Away','Home']])
-            line_types[1].click()
-            line_types[0].click()
+            line_types_selector.select_by_value('total')
             total_data = self.scrape_data(date, [['Over','Under']])
-            line_types[2].click()
-            line_types[1].click()
+            line_types_selector.select_by_value('ml')
             ml_data = self.scrape_data(date, [['AwayML','HomeML']])
-            line_types[0].click()
-            line_types[2].click()
         elif league in ['mlb','nhl']:
+            line_types_selector.select_by_value('ml')
             ml_data = self.scrape_data(date, [['AwayML','HomeML']])
-            line_types[0].click()
-            line_types[2].click()
+            line_types_selector.select_by_value('spread')
             spread_data = self.scrape_data(date, [['Away','Home']])
-            line_types[1].click()
-            line_types[0].click()
+            line_types_selector.select_by_value('total')
             total_data = self.scrape_data(date, [['Over','Under']])
         if spread_data:
             return(self.join_data(spread_data, total_data, ml_data))
@@ -261,12 +255,18 @@ class ANScraper:
                 previously_closed = pd.DataFrame([])
             with connection.cursor() as cursor:
                 for idx, row in data.iterrows():
-                    if not previously_closed.empty and len(previously_closed[(previously_closed['Month'] == int(row['Month'])) & (previously_closed['Day'] == int(row['Day'])) & (previously_closed['Year'] == int(row['Year'])) & (previously_closed['HomeTeam'] == (row['HomeTeam'])) & (previously_closed['Closed'] == 'Yes')] > 0):
-                        continue
+                    if not previously_closed.empty:
+                        sub = previously_closed[previously_closed['Month'] == int(row['Month'])]
+                        sub = sub[sub['Day'] == int(row['Day'])]
+                        sub = sub[sub['Year'] == int(row['Year'])]
+                        sub = sub[sub['HomeTeam'] == row['HomeTeam']]
+                        if len(sub) > 0:
+                            continue
                     else:
                         try:
+                            #remove the prepended "o" from the line
                             if not pd.isna(row['OverOpen']):
-                                row['OverOpen'] = row['OverOpen'][1:] #remove the prepended "o" from the line
+                                row['OverOpen'] = row['OverOpen'][1:] 
                             if not pd.isna(row['CurrentBestOverLine']):
                                 row['CurrentBestOverLine'] = row['CurrentBestOverLine'][1:]
                             if not pd.isna(row['CurrentBestUnderLine']):
@@ -285,10 +285,10 @@ class ANScraper:
 if __name__ == "__main__":
     scraper = ANScraper()
     scraper.login()
-    NBA = scraper.scrape('nba')
-    NFL = scraper.scrape('nfl')
-    NCAAF = scraper.scrape('ncaaf')
+    # NBA = scraper.scrape('nba')
+    # NFL = scraper.scrape('nfl')
+    # NCAAF = scraper.scrape('ncaaf')
     NCAAB = scraper.scrape('ncaab')
-    NHL = scraper.scrape('nhl')
-    MLB = scraper.scrape('mlb')
+    # NHL = scraper.scrape('nhl')
+    # MLB = scraper.scrape('mlb')
     scraper.quit()
